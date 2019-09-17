@@ -16,10 +16,9 @@ SALT_TIMEOUT=$2
 SALT_MINION=$3
 SALT_CMD=$4
 
-# Get GitLab project name as last match after / (there can be nested groups)
+# Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
-
-# Get project ID by API
+# Get project ID
 GITLAB_PROJECT_ID=$(curl -s -H "Private-Token: ${GL_USER_PRIVATE_TOKEN}" -X GET "${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ENCODED}" | jq -r ".id")
 
 # Check GITLAB_PROJECT_ID is not null

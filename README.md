@@ -15,7 +15,7 @@ Salt Masters should be gitlab-runners for Gitlab Project with Salt Master git re
 ## Creating Pipelines
 To run salt command `state.apply app.deploy` with salt timeout `300` for minion `srv1.xyz.tld` inside project `sysadmws/xyz-salt`:
 ```
-gitlab_pipeline_salt_cmd.sh sysadmws/xyz-salt 300 srv1.xyz.tld "state.apply app.deploy"
+pipeline_salt_cmd.sh sysadmws/xyz-salt 300 srv1.xyz.tld "state.apply app.deploy"
 ```
 
 Env vars used:
