@@ -3,7 +3,7 @@ set -e
 
 # Check vars
 if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" -o "_$4" = "_" ]; then
-	echo ERROR: needed args missing: use gitlab_pipeline_salt_cmd.sh SALT_PROJECT TIMEOUT TARGET CMD
+	echo ERROR: needed args missing: use pipeline_salt_cmd.sh SALT_PROJECT TIMEOUT TARGET CMD
 	exit 1
 fi
 if [ "_${GL_USER_PRIVATE_TOKEN}" = "_" -o "_${GL_URL}" = "_" ]; then
@@ -36,7 +36,7 @@ TAG_CREATED_NAME=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" 
 	-d '{
 		"tag_name": "run_salt_cmd_'${SALT_MINION}'_'${SALT_CMD_UNDER}'_'${DATE_TAG}'",
 		"ref": "master",
-		"message": "Auto-created by gitlab_pipeline_salt_cmd.sh"
+		"message": "Auto-created by pipeline_salt_cmd.sh"
 	}' \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/repository/tags" | jq -r ".name")
 
