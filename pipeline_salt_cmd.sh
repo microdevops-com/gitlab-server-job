@@ -27,14 +27,15 @@ if [ "_${GITLAB_PROJECT_ID}" = "_null" ]; then
 	exit 1
 fi
 
-SALT_CMD_UNDER=$(echo ${SALT_CMD} | sed -e "s# #_#g")
+SALT_CMD_SAFE=$(echo ${SALT_CMD} | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g)
 DATE_TAG=$(date "+%Y-%m-%d_%H-%M-%S")
+SALT_CMD_BASE64=$(echo ${SALT_CMD} | base64 -w0)
 
 # Create custom git tag from master to run pipeline within
 TAG_CREATED_NAME=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	-H "Content-Type: application/json" \
 	-d '{
-		"tag_name": "run_salt_cmd_'${SALT_MINION}'_'${SALT_CMD_UNDER}'_'${DATE_TAG}'",
+		"tag_name": "run_salt_cmd_'${SALT_MINION}'_'${SALT_CMD_SAFE}'_'${DATE_TAG}'",
 		"ref": "master",
 		"message": "Auto-created by pipeline_salt_cmd.sh"
 	}' \
@@ -47,14 +48,14 @@ if [ "_${TAG_CREATED_NAME}" = "_null" ]; then
 fi
 
 # Create pipeline
-# Some quoting/globing hell happens if SALT_CMD contains space and -d '', so \" used
+# Some quoting/globing hell happens if SALT_CMD contains space and -d '', so base64 packing-unpacking used
 PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	-H "Content-Type: application/json" \
 	-d "{
 		\"ref\": \"${TAG_CREATED_NAME}\",
 		\"variables\": [
 			{\"key\": \"SALT_TIMEOUT\", \"value\": \"${SALT_TIMEOUT}\"},
-			{\"key\": \"SALT_CMD\", \"value\": \"${SALT_CMD}\"},
+			{\"key\": \"SALT_CMD\", \"value\": \"${SALT_CMD_BASE64}\"},
 			{\"key\": \"SALT_MINION\", \"value\": \"${SALT_MINION}\"}
 		]
 	}" \
