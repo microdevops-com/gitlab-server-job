@@ -61,7 +61,8 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipeline" | jq -r ".id")
 
-echo Pipeline ID: ${PIPELINE_ID}
+echo NOTICE: Pipeline ID: ${PIPELINE_ID}
+echo NOTICE: Pipeline URL: ${GL_URL}/${SALT_PROJECT}/pipelines/${PIPELINE_ID}
 # Check PIPELINE_ID is not null
 if [ "_${PIPELINE_ID}" = "_null" ]; then
 	echo ERROR: cannot create pipeline to run within - got null
@@ -82,7 +83,7 @@ while true; do
 	#echo ${CURL_OUT}
 	# Get status of pipeline
 	PIPELINE_STATUS=$(echo ${CURL_OUT} | jq -r ".status")
-	echo Pipeline Status: ${PIPELINE_STATUS}
+	echo NOTICE: Pipeline Status: ${PIPELINE_STATUS}
 	# Exit with OK on success
 	if [[ "_${PIPELINE_STATUS}" = "_success" ]]; then
 		break
