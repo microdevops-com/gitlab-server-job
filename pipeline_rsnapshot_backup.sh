@@ -14,7 +14,7 @@ fi
 WAIT=$1
 SALT_PROJECT=$2
 SERVER_TIMEOUT=$3
-SERVER_FQDN=$4
+SALT_MINION=$4
 RSNAPSHOT_BACKUP_TYPE=$4
 
 # Encode GitLab project name
@@ -34,7 +34,7 @@ DATE_TAG=$(date "+%Y-%m-%d_%H-%M-%S")
 TAG_CREATED_NAME=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	-H "Content-Type: application/json" \
 	-d '{
-		"tag_name": "run_rsnapshot_backup_'${SERVER_FQDN}'_'${DATE_TAG}'",
+		"tag_name": "run_rsnapshot_backup_'${SALT_MINION}'_'${DATE_TAG}'",
 		"ref": "master",
 		"message": "Auto-created by pipeline_rsnapshot_backup.sh"
 	}' \
@@ -53,7 +53,7 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 		\"ref\": \"${TAG_CREATED_NAME}\",
 		\"variables\": [
 			{\"key\": \"SERVER_TIMEOUT\", \"value\": \"${SERVER_TIMEOUT}\"},
-			{\"key\": \"SERVER_FQDN\", \"value\": \"${SERVER_FQDN}\"},
+			{\"key\": \"SALT_MINION\", \"value\": \"${SALT_MINION}\"},
 			{\"key\": \"RSNAPSHOT_BACKUP_TYPE\", \"value\": \"${RSNAPSHOT_BACKUP_TYPE}\"}
 		]
 	}" \
