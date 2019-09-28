@@ -2,8 +2,8 @@
 set -e
 
 # Check vars
-if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" -o "_$4" = "_" ]; then
-	echo ERROR: needed args missing: use pipeline_salt_cmd.sh SALT_PROJECT TIMEOUT TARGET CMD
+if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" -o "_$4" = "_" -o "_$5" = "_" ]; then
+	echo ERROR: needed args missing: use pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD
 	exit 1
 fi
 if [ "_${GL_USER_PRIVATE_TOKEN}" = "_" -o "_${GL_URL}" = "_" ]; then
@@ -11,10 +11,11 @@ if [ "_${GL_USER_PRIVATE_TOKEN}" = "_" -o "_${GL_URL}" = "_" ]; then
 	exit 1
 fi
 
-SALT_PROJECT=$1
-SALT_TIMEOUT=$2
-SALT_MINION=$3
-SALT_CMD=$4
+WAIT=$1
+SALT_PROJECT=$2
+SALT_TIMEOUT=$3
+SALT_MINION=$4
+SALT_CMD=$5
 
 # Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
@@ -74,30 +75,31 @@ if [[ ! ${PIPELINE_ID} =~ ^-?[0-9]+$ ]]; then
 	exit 1
 fi
 
-# Get pipeline status
-while true; do
-	sleep 2
-	CURL_OUT=$(curl -s -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" ${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipelines/${PIPELINE_ID})
-	# Debug output
-	#echo Curl Pipeline Status:
-	#echo ${CURL_OUT}
-	# Get status of pipeline
-	PIPELINE_STATUS=$(echo ${CURL_OUT} | jq -r ".status")
-	echo NOTICE: Pipeline Status: ${PIPELINE_STATUS}
-	# Exit with OK on success
-	if [[ "_${PIPELINE_STATUS}" = "_success" ]]; then
-		break
-	fi
-	# Wait on pending or running
-	if [[ "_${PIPELINE_STATUS}" = "_pending" ]]; then
-		continue
-	fi
-	if [[ "_${PIPELINE_STATUS}" = "_running" ]]; then
-		continue
-	fi
-	# All other statuses or anything else - error
-	echo ERROR: status ${PIPELINE_STATUS} is failed or unknown to wait any longer
-	exit 1
-done
-
-echo "NOTICE: Pipeline ID ${PIPELINE_ID} successfully finished"
+if [ "${WAIT}" = "wait" ]; then
+	# Get pipeline status
+	while true; do
+		sleep 2
+		CURL_OUT=$(curl -s -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" ${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipelines/${PIPELINE_ID})
+		# Debug output
+		#echo Curl Pipeline Status:
+		#echo ${CURL_OUT}
+		# Get status of pipeline
+		PIPELINE_STATUS=$(echo ${CURL_OUT} | jq -r ".status")
+		echo NOTICE: Pipeline Status: ${PIPELINE_STATUS}
+		# Exit with OK on success
+		if [[ "_${PIPELINE_STATUS}" = "_success" ]]; then
+			break
+		fi
+		# Wait on pending or running
+		if [[ "_${PIPELINE_STATUS}" = "_pending" ]]; then
+			continue
+		fi
+		if [[ "_${PIPELINE_STATUS}" = "_running" ]]; then
+			continue
+		fi
+		# All other statuses or anything else - error
+		echo ERROR: status ${PIPELINE_STATUS} is failed or unknown to wait any longer
+		exit 1
+	done
+	echo "NOTICE: Pipeline ID ${PIPELINE_ID} successfully finished"
+fi
