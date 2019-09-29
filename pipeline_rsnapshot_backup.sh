@@ -6,8 +6,12 @@ if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" -o "_$4" = "_" -o "_$5" = "_" ]; 
 	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT
 	exit 1
 fi
-if [ "_${GL_USER_PRIVATE_TOKEN}" = "_" -o "_${GL_URL}" = "_" ]; then
+if [ "_${GL_USER_PRIVATE_TOKEN}" = "_" ]; then
 	echo ERROR: needed env var missing: GL_USER_PRIVATE_TOKEN
+	exit 1
+fi
+if [ "_${GL_URL}" = "_" ]; then
+	echo ERROR: needed env var missing: GL_URL
 	exit 1
 fi
 
