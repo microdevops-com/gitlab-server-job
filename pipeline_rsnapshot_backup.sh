@@ -13,7 +13,7 @@ fi
 
 WAIT=$1
 SALT_PROJECT=$2
-SERVER_TIMEOUT=$3
+SALT_TIMEOUT=$3 # meaningful only for SALT type
 SALT_MINION=$4
 RSNAPSHOT_BACKUP_TYPE=$4
 
@@ -52,7 +52,7 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	-d "{
 		\"ref\": \"${TAG_CREATED_NAME}\",
 		\"variables\": [
-			{\"key\": \"SERVER_TIMEOUT\", \"value\": \"${SERVER_TIMEOUT}\"},
+			{\"key\": \"SALT_TIMEOUT\", \"value\": \"${SALT_TIMEOUT}\"},
 			{\"key\": \"SALT_MINION\", \"value\": \"${SALT_MINION}\"},
 			{\"key\": \"RSNAPSHOT_BACKUP_TYPE\", \"value\": \"${RSNAPSHOT_BACKUP_TYPE}\"}
 		]
