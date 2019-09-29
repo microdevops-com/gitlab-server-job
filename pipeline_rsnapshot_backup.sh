@@ -15,7 +15,7 @@ WAIT=$1
 SALT_PROJECT=$2
 SALT_TIMEOUT=$3 # meaningful only for SALT type
 SALT_MINION=$4
-RSNAPSHOT_BACKUP_TYPE=$4
+RSNAPSHOT_BACKUP_TYPE=$5
 
 # Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
