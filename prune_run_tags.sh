@@ -18,6 +18,21 @@ fi
 SALT_PROJECT=$1
 TAGS_KEEP_AGE=$2
 
+# Temp file for headers
+HEADERS_FILE=$(mktemp)
+
+# Exit if lock exists (prevent multiple execution)
+LOCK_DIR=prune_run_tags.lock
+
+if mkdir "${LOCK_DIR}"
+then
+	echo -e >&2 "NOTICE: Successfully acquired lock on ${LOCK_DIR}"
+	trap 'rm -rf "${LOCK_DIR}"; rm -f ${HEADERS_FILE}' 0
+else
+	echo -e >&2 "ERROR: Cannot acquire lock, giving up on ${LOCK_DIR}"
+	exit 1
+fi
+
 # Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
 # Get project ID
@@ -39,9 +54,6 @@ curl -sS -X DELETE -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags/run_*"
 echo
 
-# Temp file for headers
-HEADERS_FILE=$(mktemp)
-
 echo NOTICE: prunning old 'run_*' tags:
 
 # Initial page
@@ -54,9 +66,8 @@ while [[ -n ${PAGE_LINK} ]]; do
 		-H "Content-Type: application/json" \
 		${PAGE_LINK} | jq -c ".[]")
 
-	# Take next page link from response headers
-	PAGE_LINK=$(cat ${HEADERS_FILE} | grep '^Link:.*; rel="next"' | sed -r 's/^.*<(https:.+)>; rel="next".*$/\1/')
-	echo NOTICE: next page link: ${PAGE_LINK}
+	# Pagination skips tags between pages if we delete tags, so we will retry the same page if there were deletinions
+	NEED_RETRY=false
 
 	# Loop for tags on page
 	IFS=$'\n'
@@ -74,9 +85,23 @@ while [[ -n ${PAGE_LINK} ]]; do
 			echo NOTICE: tag age ${TAG_AGE} is greater or equal ${TAGS_KEEP_AGE}, deleting
 			curl -sS -X DELETE -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
 				"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/repository/tags/${TAG_NAME}" | jq
+			
+			# We need retry only with deletes
+			NEED_RETRY=true
 		fi
 	done
+	
+	if [[ ${NEED_RETRY} = true ]]; then
+		# No changes in the link
+		echo NOTICE: next page link with retry: ${PAGE_LINK}
+	else
+		# Take next page link from response headers
+		PAGE_LINK=$(cat ${HEADERS_FILE} | grep '^Link:.*; rel="next"' | sed -r 's/^.*<(https:.+)>; rel="next".*$/\1/')
+		echo NOTICE: next page link: ${PAGE_LINK}
+	fi
 done
 
-# Remove temp file
-rm -f ${HEADERS_FILE}
+echo NOTICE: restoring protection for 'run_*' tags:
+curl -sS -X POST -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
+	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags?name=run_*&create_access_level=40"
+echo
