@@ -24,10 +24,17 @@ HEADERS_FILE=$(mktemp)
 # Exit if lock exists (prevent multiple execution)
 LOCK_DIR=prune_run_tags.lock
 
+function restore_protection () {
+	echo NOTICE: restoring protection for 'run_*' tags:
+	curl -sS -X POST -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
+		"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags?name=run_*&create_access_level=40"
+	echo
+}
+
 if mkdir "${LOCK_DIR}"
 then
 	echo -e >&2 "NOTICE: Successfully acquired lock on ${LOCK_DIR}"
-	trap 'rm -rf "${LOCK_DIR}"; rm -f ${HEADERS_FILE}' 0
+	trap 'rm -rf "${LOCK_DIR}"; rm -f ${HEADERS_FILE}; restore_protection' 0
 else
 	echo -e >&2 "ERROR: Cannot acquire lock, giving up on ${LOCK_DIR}"
 	exit 1
@@ -84,7 +91,7 @@ while [[ -n ${PAGE_LINK} ]]; do
 		if [[ ${TAG_AGE} -ge ${TAGS_KEEP_AGE} ]]; then
 			echo NOTICE: tag age ${TAG_AGE} is greater or equal ${TAGS_KEEP_AGE}, deleting
 			curl -sS -X DELETE -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
-				"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/repository/tags/${TAG_NAME}" | jq
+				"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/repository/tags/${TAG_NAME}"
 			
 			# We need retry only with deletes
 			NEED_RETRY=true
@@ -101,7 +108,4 @@ while [[ -n ${PAGE_LINK} ]]; do
 	fi
 done
 
-echo NOTICE: restoring protection for 'run_*' tags:
-curl -sS -X POST -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
-	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags?name=run_*&create_access_level=40"
-echo
+restore_protection
