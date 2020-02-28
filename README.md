@@ -18,6 +18,13 @@ To run salt command `state.apply app.deploy` with salt timeout `300` for minion 
 pipeline_salt_cmd.sh sysadmws/xyz-salt 300 srv1.xyz.tld "state.apply app.deploy"
 ```
 
+Running rsnapshot_backup examples (via salt, via ssh, via ssh with nonstd port):
+```
+pipeline_rsnapshot_backup.sh wait/nowait sysadmws/xyz-salt 300 srv1.xyz.tld SALT
+pipeline_rsnapshot_backup.sh wait/nowait sysadmws/xyz-salt 300 srv1.xyz.tld SSH
+pipeline_rsnapshot_backup.sh wait/nowait sysadmws/xyz-salt 300 srv1.xyz.tld:2222 SSH
+```
+
 Env vars used:
 - GL_URL - e.g. https://gitlab.xyz.tld
 - GL_USER_PRIVATE_TOKEN - full access token of GitLab user with permissions to create git tags and pipelines

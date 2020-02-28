@@ -20,6 +20,12 @@ SALT_PROJECT=$2
 SALT_TIMEOUT=$3 # meaningful only for SALT type
 SALT_MINION=$4
 RSNAPSHOT_BACKUP_TYPE=$5
+# Check port in SALT_MINION
+if echo ${SALT_MINION} | grep -q :; then
+	SALT_MINION_CLEAN=$(echo ${SALT_MINION} | awk -F: '{print $1}')
+else
+	SALT_MINION_CLEAN=${SALT_MINION}
+fi
 
 # Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
@@ -38,7 +44,7 @@ DATE_TAG=$(date "+%Y-%m-%d_%H-%M-%S")
 TAG_CREATED_NAME=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	-H "Content-Type: application/json" \
 	-d '{
-		"tag_name": "run_rsnapshot_backup_'${SALT_MINION}'_'${DATE_TAG}'",
+		"tag_name": "run_rsnapshot_backup_'${SALT_MINION_CLEAN}'_'${DATE_TAG}'",
 		"ref": "master",
 		"message": "Auto-created by pipeline_rsnapshot_backup.sh"
 	}' \
