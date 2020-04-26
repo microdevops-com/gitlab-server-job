@@ -103,7 +103,7 @@ while [[ -n ${PAGE_LINK} ]]; do
 		echo NOTICE: next page link with retry: ${PAGE_LINK}
 	else
 		# Take next page link from response headers
-		PAGE_LINK=$(cat ${HEADERS_FILE} | grep '^Link:.*; rel="next"' | sed -r 's/^.*<(https:.+)>; rel="next".*$/\1/')
+		PAGE_LINK=$(cat ${HEADERS_FILE} | grep -i '^Link:.*; rel="next"' | sed -r 's/^.*<(https:.+)>; rel="next".*$/\1/')
 		echo NOTICE: next page link: ${PAGE_LINK}
 	fi
 done
