@@ -3,7 +3,8 @@ set -e
 
 # Check vars
 if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" -o "_$4" = "_" -o "_$5" = "_" ]; then
-	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT
+	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT SSH_HOST SSH_PORT
+	echo ERROR: SSH_HOST, SSH_PORT - optional
 	exit 1
 fi
 if [ "_${GL_USER_PRIVATE_TOKEN}" = "_" ]; then
@@ -20,6 +21,19 @@ SALT_PROJECT=$2
 SALT_TIMEOUT=$3 # meaningful only for SALT type
 SALT_MINION=$4
 RSNAPSHOT_BACKUP_TYPE=$5
+
+if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
+	if [ "_$7" = "_" ]; then
+		SSH_PORT=22
+	else
+		SSH_PORT=$7
+	fi
+	if [ "_$6" = "_" ]; then
+		SSH_HOST=${SALT_MINION}
+	else
+		SSH_HOST=$6
+	fi
+fi
 
 # Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
@@ -58,7 +72,9 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 		\"variables\": [
 			{\"key\": \"SALT_TIMEOUT\", \"value\": \"${SALT_TIMEOUT}\"},
 			{\"key\": \"SALT_MINION\", \"value\": \"${SALT_MINION}\"},
-			{\"key\": \"RSNAPSHOT_BACKUP_TYPE\", \"value\": \"${RSNAPSHOT_BACKUP_TYPE}\"}
+			{\"key\": \"RSNAPSHOT_BACKUP_TYPE\", \"value\": \"${RSNAPSHOT_BACKUP_TYPE}\"},
+			{\"key\": \"SSH_HOST\", \"value\": \"${SSH_HOST}\"},
+			{\"key\": \"SSH_PORT\", \"value\": \"${SSH_PORT}\"}
 		]
 	}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipeline" | jq -r ".id")
