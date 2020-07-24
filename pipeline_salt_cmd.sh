@@ -32,7 +32,7 @@ if [ "_${GITLAB_PROJECT_ID}" = "_null" ]; then
 	exit 1
 fi
 
-SALT_CMD_SAFE=$(echo ${SALT_CMD} | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g)
+SALT_CMD_SAFE=$(echo ${SALT_CMD} | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | cut -c -80)
 DATE_TAG=$(date "+%Y-%m-%d_%H-%M-%S")
 SALT_CMD_BASE64=$(echo ${SALT_CMD} | base64 -w0)
 
