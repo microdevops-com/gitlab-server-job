@@ -21,6 +21,9 @@ SALT_TIMEOUT=$3
 SALT_MINION=$4
 SALT_CMD=$5
 
+# Spin marks
+MARKS=( '/' '-' '\' '|' )
+
 # Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
 # Get project ID
@@ -66,8 +69,6 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipeline" | jq -r ".id")
 
-echo NOTICE: Pipeline ID: ${PIPELINE_ID}
-echo NOTICE: Pipeline URL: ${GL_URL}/${SALT_PROJECT}/pipelines/${PIPELINE_ID}
 # Check PIPELINE_ID is not null
 if [ "_${PIPELINE_ID}" = "_null" ]; then
 	echo ERROR: cannot create pipeline to run within - got null
@@ -80,6 +81,7 @@ if [[ ! ${PIPELINE_ID} =~ ^-?[0-9]+$ ]]; then
 fi
 
 if [ "${WAIT}" = "wait" ]; then
+	i=1
 	# Get pipeline status
 	while true; do
 		sleep 2
@@ -89,7 +91,8 @@ if [ "${WAIT}" = "wait" ]; then
 		#echo ${CURL_OUT}
 		# Get status of pipeline
 		PIPELINE_STATUS=$(echo ${CURL_OUT} | jq -r ".status")
-		echo NOTICE: Pipeline Status: ${PIPELINE_STATUS}
+		printf '%s\r' "${MARKS[i++ % ${#MARKS[@]}]}"
+		echo -n "${PIPELINE_STATUS}"
 		# Exit with OK on success
 		if [[ "_${PIPELINE_STATUS}" = "_success" ]]; then
 			break
@@ -102,8 +105,18 @@ if [ "${WAIT}" = "wait" ]; then
 			continue
 		fi
 		# All other statuses or anything else - error
+		echo -en "\r"
 		echo ERROR: status ${PIPELINE_STATUS} is failed or unknown to wait any longer
 		exit 1
 	done
-	echo "NOTICE: Pipeline ID ${PIPELINE_ID} successfully finished"
+	echo -en "\r"
+	echo -n {
+	echo -n '"target": "'${SALT_MINION}'", '
+	echo -n '"pipeline_id": "'${PIPELINE_ID}'", '
+	echo -n '"pipeline_url": "'${GL_URL}/${SALT_PROJECT}/pipelines/${PIPELINE_ID}'", '
+	echo -n '"pipeline_status": "'${PIPELINE_STATUS}'", '
+	echo -n '"project": "'${SALT_PROJECT}'", '
+	echo -n '"timeout": "'${SALT_TIMEOUT}'", '
+	echo -n '"cmd": "'${SALT_CMD}'"'
+	echo }
 fi
