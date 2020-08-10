@@ -31,7 +31,8 @@ GITLAB_PROJECT_ID=$(curl -s -H "Private-Token: ${GL_USER_PRIVATE_TOKEN}" -X GET 
 
 # Check GITLAB_PROJECT_ID is not null
 if [ "_${GITLAB_PROJECT_ID}" = "_null" ]; then
-	echo ERROR: cannot find GITLAB_PROJECT_ID - got null
+	>&2 echo ERROR: cannot find GITLAB_PROJECT_ID - got null
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "null_project", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
 	exit 1
 fi
 
@@ -51,7 +52,8 @@ TAG_CREATED_NAME=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" 
 
 # Check TAG_CREATED_NAME is not null
 if [ "_${TAG_CREATED_NAME}" = "_null" ]; then
-	echo ERROR: cannot create git tag to run within - got null
+	>&2 echo ERROR: cannot create git tag to run within - got null
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "null_tag", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
 	exit 1
 fi
 
@@ -71,12 +73,14 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 
 # Check PIPELINE_ID is not null
 if [ "_${PIPELINE_ID}" = "_null" ]; then
-	echo ERROR: cannot create pipeline to run within - got null
+	>&2 echo ERROR: cannot create pipeline to run within - got null
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "null_pipeline", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
 	exit 1
 fi
 # Check if pipeline id is int
 if [[ ! ${PIPELINE_ID} =~ ^-?[0-9]+$ ]]; then
-	echo ERROR: pipeline id is not int
+	>&2 echo ERROR: pipeline id is not int
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "not_int_pipeline", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
 	exit 1
 fi
 
@@ -91,8 +95,8 @@ if [ "${WAIT}" = "wait" ]; then
 		#echo ${CURL_OUT}
 		# Get status of pipeline
 		PIPELINE_STATUS=$(echo ${CURL_OUT} | jq -r ".status")
-		printf '%s\r' "${MARKS[i++ % ${#MARKS[@]}]}"
-		echo -n "${PIPELINE_STATUS}"
+		>&2 printf '%s\r' "${MARKS[i++ % ${#MARKS[@]}]}"
+		>&2 echo -n "${PIPELINE_STATUS}"
 		# Exit with OK on success
 		if [[ "_${PIPELINE_STATUS}" = "_success" ]]; then
 			break
@@ -105,8 +109,9 @@ if [ "${WAIT}" = "wait" ]; then
 			continue
 		fi
 		# All other statuses or anything else - error
-		echo -en "\r"
-		echo ERROR: status ${PIPELINE_STATUS} is failed or unknown to wait any longer
+		>&2 echo -en "\r"
+		>&2 echo ERROR: status ${PIPELINE_STATUS} is failed or unknown to wait any longer
+		echo '{"target": "'${SALT_MINION}'", "pipeline_status": "not_int_pipeline", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
 		exit 1
 	done
 	echo -en "\r"
