@@ -79,7 +79,7 @@ if [ "_${PIPELINE_ID}" = "_null" ]; then
 fi
 # Check if pipeline id is int
 if [[ ! ${PIPELINE_ID} =~ ^-?[0-9]+$ ]]; then
-	>&2 echo ERROR: pipeline id is not int
+	>&2 echo ERROR: pipeline id ${PIPELINE_ID} is not int
 	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "not_int_pipeline", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
 	exit 1
 fi
