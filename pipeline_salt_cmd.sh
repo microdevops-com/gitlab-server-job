@@ -111,7 +111,15 @@ if [ "${WAIT}" = "wait" ]; then
 		# All other statuses or anything else - error
 		>&2 echo -en "\r"
 		>&2 echo ERROR: status ${PIPELINE_STATUS} is failed or unknown to wait any longer
-		echo '{"target": "'${SALT_MINION}'", "pipeline_status": "pipeline_failed", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
+		echo -n {
+		echo -n '"target": "'${SALT_MINION}'", '
+		echo -n '"pipeline_id": "'${PIPELINE_ID}'", '
+		echo -n '"pipeline_url": "'${GL_URL}/${SALT_PROJECT}/pipelines/${PIPELINE_ID}'", '
+		echo -n '"pipeline_status": "'${PIPELINE_STATUS}'", '
+		echo -n '"project": "'${SALT_PROJECT}'", '
+		echo -n '"timeout": "'${SALT_TIMEOUT}'", '
+		echo -n '"cmd": "'${SALT_CMD}'"'
+		echo }
 		exit 1
 	done
 	echo -en "\r"
