@@ -3,8 +3,8 @@ set -e
 
 # Check vars
 if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" -o "_$4" = "_" -o "_$5" = "_" ]; then
-	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT SSH_HOST SSH_PORT
-	echo ERROR: SSH_HOST, SSH_PORT - optional
+	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT SSH_HOST SSH_PORT SSH_JUMP
+	echo ERROR: SSH_HOST, SSH_PORT, SSH_JUMP - optional
 	exit 1
 fi
 if [ "_${GL_USER_PRIVATE_TOKEN}" = "_" ]; then
@@ -23,6 +23,11 @@ SALT_MINION=$4
 RSNAPSHOT_BACKUP_TYPE=$5
 
 if [ "${RSNAPSHOT_BACKUP_TYPE}" = "SSH" ]; then
+	if [ "_$8" = "_" ]; then
+		SSH_JUMP=""
+	else
+		SSH_JUMP=$8
+	fi
 	if [ "_$7" = "_" ]; then
 		SSH_PORT=22
 	else
@@ -73,6 +78,7 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 			{\"key\": \"SALT_TIMEOUT\", \"value\": \"${SALT_TIMEOUT}\"},
 			{\"key\": \"SALT_MINION\", \"value\": \"${SALT_MINION}\"},
 			{\"key\": \"RSNAPSHOT_BACKUP_TYPE\", \"value\": \"${RSNAPSHOT_BACKUP_TYPE}\"},
+			{\"key\": \"SSH_JUMP\", \"value\": \"${SSH_JUMP}\"},
 			{\"key\": \"SSH_HOST\", \"value\": \"${SSH_HOST}\"},
 			{\"key\": \"SSH_PORT\", \"value\": \"${SSH_PORT}\"}
 		]
