@@ -41,18 +41,19 @@ DATE_TAG=$(date "+%Y-%m-%d_%H-%M-%S")
 SALT_CMD_BASE64=$(echo ${SALT_CMD} | base64 -w0)
 
 # Create custom git tag from master to run pipeline within
-TAG_CREATED_NAME=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
+TAG_CURL_OUT=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 	-H "Content-Type: application/json" \
 	-d '{
 		"tag_name": "run_salt_cmd_'${SALT_MINION}'_'${SALT_CMD_SAFE}'_'${DATE_TAG}'",
 		"ref": "master",
 		"message": "Auto-created by pipeline_salt_cmd.sh"
 	}' \
-	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/repository/tags" | jq -r ".name")
+	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/repository/tags")
+TAG_CREATED_NAME=$(echo ${TAG_CURL_OUT} | jq -r ".name")
 
 # Check TAG_CREATED_NAME is not null
 if [ "_${TAG_CREATED_NAME}" = "_null" ]; then
-	>&2 echo ERROR: cannot create git tag to run within - got null
+	>&2 echo ERROR: cannot create git tag to run within - got null, raw curl out: ${TAG_CURL_OUT}
 	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "null_tag", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
 	exit 1
 fi
