@@ -14,5 +14,7 @@ if cat *_${SALT_MINION} | grep -q 1; then
 	echo OK: Master with 1 needed Minion found
 else
 	echo ERROR: Master with 1 needed Minion NOT found
+	echo Running send_notify_devilry.sh to report this error
+	sudo --preserve-env /srv/scripts/ci_sudo/send_notify_devilry.sh
 	exit 1
 fi
