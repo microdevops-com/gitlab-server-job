@@ -119,6 +119,9 @@ if [[ "${WAIT}" == "wait" ]]; then
 		if [[ "_${PIPELINE_STATUS}" == "_running" ]]; then
 			continue
 		fi
+		if [[ "_${PIPELINE_STATUS}" == "_created" ]]; then
+			continue
+		fi
 		# All other statuses or anything else - error
 		>&2 echo -en "\r"
 		>&2 echo ERROR: status ${PIPELINE_STATUS} is failed or unknown to wait any longer
