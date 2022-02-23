@@ -14,5 +14,5 @@ if cat alive_minions/${CI_RUNNER_DESCRIPTION}_${SALT_MINION} | grep -q 1; then
 	fi
 else
 	echo Skipping this Salt Master
-	rm rsnapshot_backup_sync_status # Remove this artifact if exist and not needed
+	rm -f rsnapshot_backup_sync_status # Remove this artifact if exist and not needed
 fi
