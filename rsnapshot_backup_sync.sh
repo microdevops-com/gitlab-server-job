@@ -5,8 +5,10 @@ set -e
 if cat alive_minions/${CI_RUNNER_DESCRIPTION}_${SALT_MINION} | grep -q 1; then
 	echo One connected needed Minion found, running rsnapshot_backup_sync.sh on this Salt Master
 	if sudo /srv/scripts/ci_sudo/rsnapshot_backup_sync.sh "${SALT_TIMEOUT}" "${SALT_MINION}" "${RSNAPSHOT_BACKUP_TYPE}" "${SSH_HOST}" "${SSH_PORT}" "${SSH_JUMP}"; then
+		echo rsnapshot_backup_sync_status = success
 		echo "export RSNAPSHOT_BACKUP_SYNC=success" > rsnapshot_backup_sync_status
 	else
+		echo rsnapshot_backup_sync_status = failed
 		echo "export RSNAPSHOT_BACKUP_SYNC=failed" > rsnapshot_backup_sync_status
 		exit 1
 	fi
