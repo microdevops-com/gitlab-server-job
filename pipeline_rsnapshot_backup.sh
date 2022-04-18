@@ -46,7 +46,11 @@ MARKS=( '/' '-' '\' '|' )
 # Encode GitLab project name
 GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
 # Get project ID
-GITLAB_PROJECT_ID=$(curl -s -H "Private-Token: ${GL_USER_PRIVATE_TOKEN}" -X GET "${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ENCODED}" | jq -r ".id")
+if ! GITLAB_PROJECT_ID=$(curl -s -H "Private-Token: ${GL_USER_PRIVATE_TOKEN}" -X GET "${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ENCODED}" | jq -r ".id"); then
+	>&2 echo ERROR: cannot find GITLAB_PROJECT_ID - curl error
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "null_project", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
+	exit 1
+fi
 
 # Check GITLAB_PROJECT_ID is not null
 if [[ "_${GITLAB_PROJECT_ID}" == "_null" ]]; then
