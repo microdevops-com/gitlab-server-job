@@ -3,7 +3,7 @@ set -e
 
 # Check vars
 if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" ]]; then
-	echo ERROR: needed args missing: use prune_run_tags.sh SALT_PROJECT TAGS_KEEP_AGE api/git
+	echo "ERROR: needed args missing: use prune_run_tags.sh SALT_PROJECT TAGS_KEEP_AGE api/git [restore_protection_level]"
 	exit 1
 fi
 if [[ "_${GL_ADMIN_PRIVATE_TOKEN}" == "_" ]]; then
@@ -18,6 +18,12 @@ fi
 SALT_PROJECT=$1
 TAGS_KEEP_AGE=$2
 METHOD=$3
+RESTORE_PROTECTION_LEVEL=$4
+
+if [[ -z "${RESTORE_PROTECTION_LEVEL}" ]]; then
+	# By default restore tag protection level to Maintainer only
+	RESTORE_PROTECTION_LEVEL=40
+fi
 
 PROJECTS_SUBDIR=tmp/projects
 
@@ -30,7 +36,7 @@ LOCK_DIR=.locks/prune_run_tags.lock
 function restore_protection () {
 	echo NOTICE: restoring protection for 'run_*' tags:
 	curl -sS -X POST -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
-		"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags?name=run_*&create_access_level=40"
+		"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags?name=run_*&create_access_level=${RESTORE_PROTECTION_LEVEL}"
 	echo
 }
 
@@ -43,7 +49,7 @@ function clean_projects_subdir () {
 if mkdir "${LOCK_DIR}"
 then
 	echo -e >&2 "NOTICE: Successfully acquired lock on ${LOCK_DIR}"
-	trap 'rm -rf "${LOCK_DIR}"; rm -f ${HEADERS_FILE}; restore_protection; clean_projects_subdir' 0
+	trap 'rm -rf "${LOCK_DIR}"; rm -f ${HEADERS_FILE}; clean_projects_subdir; restore_protection' 0
 else
 	echo -e >&2 "ERROR: Cannot acquire lock, giving up on ${LOCK_DIR}"
 	exit 1
@@ -147,11 +153,13 @@ elif [[ "${METHOD}" == "git" ]]; then
 	done
 
 	# Push deleted tags to remote
+	echo NOTICE: ---
+	echo NOTICE: git push --tags --prune
 	( cd ${PROJECTS_SUBDIR}/${SALT_PROJECT} && git push --tags --prune )
 else
 	echo ERROR: method is not api or git
 	exit 1
 fi
 
-restore_protection
 clean_projects_subdir
+restore_protection
