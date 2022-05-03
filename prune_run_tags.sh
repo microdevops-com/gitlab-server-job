@@ -2,15 +2,15 @@
 set -e
 
 # Check vars
-if [ "_$1" = "_" -o "_$2" = "_" -o "_$3" = "_" ]; then
+if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" ]]; then
 	echo ERROR: needed args missing: use prune_run_tags.sh SALT_PROJECT TAGS_KEEP_AGE api/git
 	exit 1
 fi
-if [ "_${GL_ADMIN_PRIVATE_TOKEN}" = "_" ]; then
+if [[ "_${GL_ADMIN_PRIVATE_TOKEN}" == "_" ]]; then
 	echo ERROR: needed env var missing: GL_ADMIN_PRIVATE_TOKEN
 	exit 1
 fi
-if [ "_${GL_URL}" = "_" ]; then
+if [[ "_${GL_URL}" == "_" ]]; then
 	echo ERROR: needed env var missing: GL_URL
 	exit 1
 fi
@@ -55,7 +55,7 @@ GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
 GITLAB_PROJECT_ID=$(curl -sS -H "Private-Token: ${GL_ADMIN_PRIVATE_TOKEN}" -X GET "${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ENCODED}" | jq -r ".id")
 
 # Check GITLAB_PROJECT_ID is not null
-if [ "_${GITLAB_PROJECT_ID}" = "_null" ]; then
+if [[ "_${GITLAB_PROJECT_ID}" == "_null" ]]; then
 	echo ERROR: cannot find GITLAB_PROJECT_ID - got null
 	exit 1
 fi
@@ -70,7 +70,7 @@ curl -sS -X DELETE -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags/run_*"
 echo
 
-if [ "${METHOD}" = "api" ]; then
+if [[ "${METHOD}" == "api" ]]; then
 	echo NOTICE: prunning old 'run_*' tags via api:
 
 	# Initial page
@@ -117,7 +117,7 @@ if [ "${METHOD}" = "api" ]; then
 			echo NOTICE: next page link: ${PAGE_LINK}
 		fi
 	done
-elif [ "${METHOD}" = "git" ]; then
+elif [[ "${METHOD}" == "git" ]]; then
 	echo NOTICE: prunning old 'run_*' tags via git:
 
 	# Make repo dir 
