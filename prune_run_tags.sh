@@ -3,7 +3,7 @@ set -e
 
 # Check vars
 if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" ]]; then
-	echo "ERROR: needed args missing: use prune_run_tags.sh SALT_PROJECT TAGS_KEEP_AGE api/git [restore_protection_level]"
+	echo "ERROR: needed args missing: use prune_run_tags.sh SALT_PROJECT TAGS_KEEP_AGE api/git [restore_protection_level] [notices]"
 	exit 1
 fi
 if [[ "_${GL_ADMIN_PRIVATE_TOKEN}" == "_" ]]; then
@@ -19,6 +19,7 @@ SALT_PROJECT=$1
 TAGS_KEEP_AGE=$2
 METHOD=$3
 RESTORE_PROTECTION_LEVEL=$4
+SHOW_NOTICES=$5
 
 if [[ -z "${RESTORE_PROTECTION_LEVEL}" ]]; then
 	# By default restore tag protection level to Maintainer only
@@ -95,17 +96,17 @@ if [[ "${METHOD}" == "api" ]]; then
 		# Loop for tags on page
 		IFS=$'\n'
 		for TAGS_ROW in ${TAGS_PAGE}; do
-			echo NOTICE: ---
+			[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: ---
 			TAG_NAME=$(echo ${TAGS_ROW} | jq -r '.name')
-			echo NOTICE: tag name: ${TAG_NAME}
+			[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: tag name: ${TAG_NAME}
 			TAG_DATE=$(echo ${TAG_NAME} | sed -r 's/^run_.+([0-9]{4}-[0-9]{2}-[0-9]{2})_[0-9]{2}-[0-9]{2}-[0-9]{2}$/\1/')
-			echo NOTICE: date from tag name: ${TAG_DATE}
+			[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: date from tag name: ${TAG_DATE}
 			TAG_AGE=$(( (`date -d "00:00" +%s` - `date -d "${TAG_DATE}" +%s`) / (24*3600) ))
-			echo NOTICE: tag age: ${TAG_AGE}
+			[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: tag age: ${TAG_AGE}
 
 			# Delete tag if older than age
 			if [[ ${TAG_AGE} -ge ${TAGS_KEEP_AGE} ]]; then
-				echo NOTICE: tag age ${TAG_AGE} is greater or equal ${TAGS_KEEP_AGE}, deleting
+				[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: tag age ${TAG_AGE} is greater or equal ${TAGS_KEEP_AGE}, deleting
 				curl -sS -X DELETE -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
 					"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/repository/tags/${TAG_NAME}"
 				
@@ -136,17 +137,17 @@ elif [[ "${METHOD}" == "git" ]]; then
 	# Loop tags
 	IFS=$'\n'
 	for TAGS_ROW in $(cd ${PROJECTS_SUBDIR}/${SALT_PROJECT} && git tag -l); do
-		echo NOTICE: ---
+		[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: ---
 		TAG_NAME=${TAGS_ROW}
-		echo NOTICE: tag name: ${TAG_NAME}
+		[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: tag name: ${TAG_NAME}
 		TAG_DATE=$(echo ${TAG_NAME} | sed -r 's/^run_.+([0-9]{4}-[0-9]{2}-[0-9]{2})_[0-9]{2}-[0-9]{2}-[0-9]{2}$/\1/')
-		echo NOTICE: date from tag name: ${TAG_DATE}
+		[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: date from tag name: ${TAG_DATE}
 		TAG_AGE=$(( (`date -d "00:00" +%s` - `date -d "${TAG_DATE}" +%s`) / (24*3600) ))
-		echo NOTICE: tag age: ${TAG_AGE}
+		[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: tag age: ${TAG_AGE}
 
 		# Delete local tag if older than age
 		if [[ ${TAG_AGE} -ge ${TAGS_KEEP_AGE} ]]; then
-			echo NOTICE: tag age ${TAG_AGE} is greater or equal ${TAGS_KEEP_AGE}, deleting
+			[[ -n "${SHOW_NOTICES}" ]] && echo NOTICE: tag age ${TAG_AGE} is greater or equal ${TAGS_KEEP_AGE}, deleting
 			# In a subshell to keep current working dir
 			( cd ${PROJECTS_SUBDIR}/${SALT_PROJECT} && git tag -d ${TAG_NAME} )
 		fi
