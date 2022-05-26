@@ -36,10 +36,11 @@ HEADERS_FILE=$(mktemp)
 LOCK_DIR=.locks/prune_run_tags.lock
 
 function restore_protection () {
-	echo NOTICE: restoring protection for 'run_*' tags:
-	curl -sS -X POST -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
-		"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags?name=run_*&create_access_level=${RESTORE_PROTECTION_LEVEL}"
-	echo
+	echo NOTICE: restoring protection for 'run_*' tags is deprecated and disabled
+	#echo NOTICE: restoring protection for 'run_*' tags:
+	#curl -sS -X POST -H "PRIVATE-TOKEN: ${GL_ADMIN_PRIVATE_TOKEN}" \
+	#	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/protected_tags?name=run_*&create_access_level=${RESTORE_PROTECTION_LEVEL}"
+	#echo
 }
 
 function clean_projects_subdir () {
