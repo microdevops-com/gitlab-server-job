@@ -1,4 +1,5 @@
 #!/bin/bash
+# This script is deprecated - we do not use run_* tags anymore
 set -e
 
 # Check vars
