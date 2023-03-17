@@ -3,7 +3,7 @@ set -e
 
 # Check vars
 if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" || "_$4" == "_" || "_$5" == "_" ]]; then
-	echo ERROR: needed args missing: use pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD
+	echo ERROR: needed args missing: use pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD [SEVERITY_OVERRIDE]
 	exit 1
 fi
 if [[ "_${GL_USER_PRIVATE_TOKEN}" == "_" ]]; then
@@ -20,6 +20,7 @@ SALT_PROJECT=$2
 SALT_TIMEOUT=$3
 SALT_MINION=$4
 SALT_CMD=$5
+SEVERITY_OVERRIDE=$6
 
 # Spin marks
 MARKS=( '/' '-' '\' '|' )
@@ -59,7 +60,7 @@ GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
 if ! GITLAB_PROJECT_ID=$(curl -s -H "Private-Token: ${GL_USER_PRIVATE_TOKEN}" -X GET "${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ENCODED}" | jq -r ".id"); then
 	>&2 echo ERROR: cannot find GITLAB_PROJECT_ID - curl error
 	PIPELINE_STATUS="null_project"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'", "severity_override": "'${SEVERITY_OVERRIDE}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -68,7 +69,7 @@ fi
 if [[ "_${GITLAB_PROJECT_ID}" == "_null" ]]; then
 	>&2 echo ERROR: cannot find GITLAB_PROJECT_ID - got null
 	PIPELINE_STATUS="null_project"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'", "severity_override": "'${SEVERITY_OVERRIDE}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -82,7 +83,8 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 		\"variables\": [
 			{\"key\": \"SALT_TIMEOUT\", \"value\": \"${SALT_TIMEOUT}\"},
 			{\"key\": \"SALT_MINION\", \"value\": \"${SALT_MINION}\"},
-			{\"key\": \"SALT_CMD\", \"value\": \"${SALT_CMD_BASE64}\"}
+			{\"key\": \"SALT_CMD\", \"value\": \"${SALT_CMD_BASE64}\"},
+			{\"key\": \"SEVERITY_OVERRIDE\", \"value\": \"${SEVERITY_OVERRIDE}\"}
 		]
 	}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipeline" | jq -r ".id")
@@ -91,7 +93,7 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 if [[ "_${PIPELINE_ID}" == "_null" ]]; then
 	>&2 echo ERROR: cannot create pipeline to run within - got null
 	PIPELINE_STATUS="null_pipeline"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'", "severity_override": "'${SEVERITY_OVERRIDE}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -99,7 +101,7 @@ fi
 if [[ ! ${PIPELINE_ID} =~ ^-?[0-9]+$ ]]; then
 	>&2 echo ERROR: pipeline id ${PIPELINE_ID} is not int
 	PIPELINE_STATUS="not_int_pipeline"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "cmd": "'${SALT_CMD}'", "severity_override": "'${SEVERITY_OVERRIDE}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -141,7 +143,8 @@ if [[ "${WAIT}" == "wait" ]]; then
 		echo -n '"pipeline_status": "'${PIPELINE_STATUS}'", '
 		echo -n '"project": "'${SALT_PROJECT}'", '
 		echo -n '"timeout": "'${SALT_TIMEOUT}'", '
-		echo -n '"cmd": "'${SALT_CMD}'"'
+		echo -n '"cmd": "'${SALT_CMD}'", '
+		echo -n '"severity_override": "'${SEVERITY_OVERRIDE}'"'
 		echo }
 		save_pipeline_history
 		exit 1
@@ -154,7 +157,8 @@ if [[ "${WAIT}" == "wait" ]]; then
 	echo -n '"pipeline_status": "'${PIPELINE_STATUS}'", '
 	echo -n '"project": "'${SALT_PROJECT}'", '
 	echo -n '"timeout": "'${SALT_TIMEOUT}'", '
-	echo -n '"cmd": "'${SALT_CMD}'"'
+	echo -n '"cmd": "'${SALT_CMD}'", '
+	echo -n '"severity_override": "'${SEVERITY_OVERRIDE}'"'
 	echo }
 	save_pipeline_history
 else
