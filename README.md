@@ -13,17 +13,22 @@ Salt Masters should be gitlab-runners for Gitlab Project with Salt Master git re
 [ci_sudo scripts](https://github.com/sysadmws/sysadmws-formula/tree/master/scripts/ci_sudo) from sysadmws-formula needed.
 
 ## Creating Pipelines
+```
+pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD [SEVERITY_OVERRIDE=critical|...] [SALT_SSH_IN_SALT=true]
+pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT [SSH_HOST=...] [SSH_PORT=...] [SSH_JUMP=...] [SALT_SSH_IN_SALT=true]
+```
+
 To run salt command `state.apply app.deploy` with salt timeout `300` for minion `srv1.xyz.tld` inside project `sysadmws/xyz-salt`:
 ```
-pipeline_salt_cmd.sh sysadmws/xyz-salt 300 srv1.xyz.tld "state.apply app.deploy"
+pipeline_salt_cmd.sh wait sysadmws/xyz-salt 300 srv1.xyz.tld "state.apply app.deploy"
 ```
 
 Running rsnapshot_backup examples (via salt, via ssh, via ssh with nonstd port):
 ```
-pipeline_rsnapshot_backup.sh wait/nowait sysadmws/xyz-salt 300 srv1.xyz.tld SALT
-pipeline_rsnapshot_backup.sh wait/nowait sysadmws/xyz-salt 300 srv1.xyz.tld SSH
-pipeline_rsnapshot_backup.sh wait/nowait sysadmws/xyz-salt 300 srv1.xyz.tld SSH 1.2.3.4
-pipeline_rsnapshot_backup.sh wait/nowait sysadmws/xyz-salt 300 srv1.xyz.tld SSH 1.2.3.4 2222
+pipeline_rsnapshot_backup.sh wait sysadmws/xyz-salt 300 srv1.xyz.tld SALT
+pipeline_rsnapshot_backup.sh wait sysadmws/xyz-salt 300 srv1.xyz.tld SSH
+pipeline_rsnapshot_backup.sh wait sysadmws/xyz-salt 300 srv1.xyz.tld SSH SSH_HOST=1.2.3.4
+pipeline_rsnapshot_backup.sh wait sysadmws/xyz-salt 300 srv1.xyz.tld SSH SSH_HOST=1.2.3.4 SSH_PORT=2222
 ```
 
 Env vars used:

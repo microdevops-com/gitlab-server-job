@@ -3,8 +3,7 @@ set -e
 
 # Check vars
 if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" || "_$4" == "_" || "_$5" == "_" ]]; then
-	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT SSH_HOST SSH_PORT SSH_JUMP
-	echo ERROR: SSH_HOST, SSH_PORT, SSH_JUMP - optional
+	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT [SSH_HOST=...] [SSH_PORT=...] [SSH_JUMP=...] [SALT_SSH_IN_SALT=true]
 	exit 1
 fi
 if [[ "_${GL_USER_PRIVATE_TOKEN}" == "_" ]]; then
@@ -22,21 +21,26 @@ SALT_TIMEOUT=$3 # meaningful only for SALT type
 SALT_MINION=$4
 RSNAPSHOT_BACKUP_TYPE=$5
 
+# Find optional args
+for ARGUMENT in "$@"
+do
+	KEY=$(echo ${ARGUMENT} | cut -f1 -d=)
+	VALUE=$(echo ${ARGUMENT} | cut -f2 -d=)
+	case "$KEY" in
+		SSH_HOST) SSH_HOST=${VALUE} ;;
+		SSH_PORT) SSH_PORT=${VALUE} ;;
+		SSH_JUMP) SSH_JUMP=${VALUE} ;;
+		SALT_SSH_IN_SALT) SALT_SSH_IN_SALT=${VALUE} ;;
+		*) ;;
+	esac
+done
+
 if [[ "${RSNAPSHOT_BACKUP_TYPE}" == "SSH" ]]; then
-	if [[ "_$8" == "_" ]]; then
-		SSH_JUMP=""
-	else
-		SSH_JUMP=$8
-	fi
-	if [[ "_$7" == "_" ]]; then
+	if [[ "_${SSH_PORT}" == "_" ]]; then
 		SSH_PORT=22
-	else
-		SSH_PORT=$7
 	fi
-	if [[ "_$6" == "_" ]]; then
+	if [[ "_${SSH_HOST}" == "_" ]]; then
 		SSH_HOST=${SALT_MINION}
-	else
-		SSH_HOST=$6
 	fi
 fi
 
@@ -78,7 +82,7 @@ GITLAB_PROJECT_ENCODED=$(echo "${SALT_PROJECT}" | sed -e "s#/#%2F#g")
 if ! GITLAB_PROJECT_ID=$(curl -s -H "Private-Token: ${GL_USER_PRIVATE_TOKEN}" -X GET "${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ENCODED}" | jq -r ".id"); then
 	>&2 echo ERROR: cannot find GITLAB_PROJECT_ID - curl error
 	PIPELINE_STATUS="null_project"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'", "salt_ssh_in_salt": "'${SALT_SSH_IN_SALT}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -87,7 +91,7 @@ fi
 if [[ "_${GITLAB_PROJECT_ID}" == "_null" ]]; then
 	>&2 echo ERROR: cannot find GITLAB_PROJECT_ID - got null
 	PIPELINE_STATUS="null_project"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'", "salt_ssh_in_salt": "'${SALT_SSH_IN_SALT}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -103,7 +107,8 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 			{\"key\": \"RSNAPSHOT_BACKUP_TYPE\", \"value\": \"${RSNAPSHOT_BACKUP_TYPE}\"},
 			{\"key\": \"SSH_JUMP\", \"value\": \"${SSH_JUMP}\"},
 			{\"key\": \"SSH_HOST\", \"value\": \"${SSH_HOST}\"},
-			{\"key\": \"SSH_PORT\", \"value\": \"${SSH_PORT}\"}
+			{\"key\": \"SSH_PORT\", \"value\": \"${SSH_PORT}\"},
+			{\"key\": \"SALT_SSH_IN_SALT\", \"value\": \"${SALT_SSH_IN_SALT}\"}
 		]
 	}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipeline" | jq -r ".id")
@@ -112,7 +117,7 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 if [[ "_${PIPELINE_ID}" == "_null" ]]; then
 	>&2 echo ERROR: cannot create pipeline to run within - got null
 	PIPELINE_STATUS="null_pipeline"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'", "salt_ssh_in_salt": "'${SALT_SSH_IN_SALT}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -120,7 +125,7 @@ fi
 if [[ ! ${PIPELINE_ID} =~ ^-?[0-9]+$ ]]; then
 	>&2 echo ERROR: pipeline id ${PIPELINE_ID} is not int
 	PIPELINE_STATUS="not_int_pipeline"
-	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'"}'
+	echo '{"target": "'${SALT_MINION}'", "pipeline_status": "'${PIPELINE_STATUS}'", "project": "'${SALT_PROJECT}'", "timeout": "'${SALT_TIMEOUT}'", "rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", "ssh_host": "'${SSH_HOST}'", "ssh_port": "'${SSH_PORT}'", "ssh_jump": "'${SSH_JUMP}'", "salt_ssh_in_salt": "'${SALT_SSH_IN_SALT}'"}'
 	save_pipeline_history
 	exit 1
 fi
@@ -165,7 +170,8 @@ if [[ "${WAIT}" == "wait" ]]; then
 		echo -n '"rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", '
 		echo -n '"ssh_host": "'${SSH_HOST}'", '
 		echo -n '"ssh_port": "'${SSH_PORT}'", '
-		echo -n '"ssh_jump": "'${SSH_JUMP}'"'
+		echo -n '"ssh_jump": "'${SSH_JUMP}'", '
+		echo -n '"salt_ssh_in_salt": "'${SALT_SSH_IN_SALT}'"'
 		echo }
 		save_pipeline_history
 		exit 1
@@ -181,7 +187,8 @@ if [[ "${WAIT}" == "wait" ]]; then
 	echo -n '"rsnapshot_backup_type": "'${RSNAPSHOT_BACKUP_TYPE}'", '
 	echo -n '"ssh_host": "'${SSH_HOST}'", '
 	echo -n '"ssh_port": "'${SSH_PORT}'", '
-	echo -n '"ssh_jump": "'${SSH_JUMP}'"'
+	echo -n '"ssh_jump": "'${SSH_JUMP}'", '
+	echo -n '"salt_ssh_in_salt": "'${SALT_SSH_IN_SALT}'"'
 	echo }
 	save_pipeline_history
 else
