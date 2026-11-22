@@ -14,8 +14,8 @@ Salt Masters should be gitlab-runners for Gitlab Project with Salt Master git re
 
 ## Creating Pipelines
 ```
-pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD [SEVERITY_OVERRIDE=critical|...] [SALT_SSH_IN_SALT=true]
-pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT [SSH_HOST=...] [SSH_PORT=...] [SSH_JUMP=...] [SALT_SSH_IN_SALT=true]
+pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD [SEVERITY_OVERRIDE=critical|...] [SALT_SSH_IN_SALT=true] [PIPELINE_NAME=asset:job_id]
+pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT [SSH_HOST=...] [SSH_PORT=...] [SSH_JUMP=...] [SALT_SSH_IN_SALT=true] [PIPELINE_NAME=asset:job_id]
 ```
 
 To run salt command `state.apply app.deploy` with salt timeout `300` for minion `srv1.xyz.tld` inside project `sysadmws/xyz-salt`:

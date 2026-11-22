@@ -3,7 +3,7 @@ set -e
 
 # Check vars
 if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" || "_$4" == "_" || "_$5" == "_" ]]; then
-	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT [SSH_HOST=...] [SSH_PORT=...] [SSH_JUMP=...] [SALT_SSH_IN_SALT=true] [RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS=...]
+	echo ERROR: needed args missing: use pipeline_rsnapshot_backup.sh wait/nowait SALT_PROJECT TIMEOUT TARGET SSH/SALT [SSH_HOST=...] [SSH_PORT=...] [SSH_JUMP=...] [SALT_SSH_IN_SALT=true] [RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS=...] [PIPELINE_NAME=asset:job_id]
 	exit 1
 fi
 if [[ "_${GL_USER_PRIVATE_TOKEN}" == "_" ]]; then
@@ -32,6 +32,7 @@ do
 		SSH_JUMP) SSH_JUMP=${VALUE} ;;
 		SALT_SSH_IN_SALT) SALT_SSH_IN_SALT=${VALUE} ;;
 		RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS) RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS=${VALUE} ;;
+		PIPELINE_NAME) PIPELINE_NAME=${VALUE} ;;
 		*) ;;
 	esac
 done
@@ -110,7 +111,8 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 			{\"key\": \"SSH_HOST\", \"value\": \"${SSH_HOST}\"},
 			{\"key\": \"SSH_PORT\", \"value\": \"${SSH_PORT}\"},
 			{\"key\": \"SALT_SSH_IN_SALT\", \"value\": \"${SALT_SSH_IN_SALT}\"},
-			{\"key\": \"RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS\", \"value\": \"${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}\"}
+			{\"key\": \"RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS\", \"value\": \"${RSNAPSHOT_BACKUP_CHECK_MAX_AGE_SECONDS}\"},
+			{\"key\": \"PIPELINE_NAME\", \"value\": \"${PIPELINE_NAME}\"}
 		]
 	}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipeline" | jq -r ".id")
