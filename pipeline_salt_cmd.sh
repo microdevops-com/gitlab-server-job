@@ -3,7 +3,7 @@ set -e
 
 # Check vars
 if [[ "_$1" == "_" || "_$2" == "_" || "_$3" == "_" || "_$4" == "_" || "_$5" == "_" ]]; then
-	echo ERROR: needed args missing: use pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD [SEVERITY_OVERRIDE="critical|..."] [SALT_SSH_IN_SALT=true]
+	echo ERROR: needed args missing: use pipeline_salt_cmd.sh wait/nowait SALT_PROJECT TIMEOUT TARGET CMD [SEVERITY_OVERRIDE="critical|..."] [SALT_SSH_IN_SALT=true] [PIPELINE_NAME=asset:job_id]
 	exit 1
 fi
 if [[ "_${GL_USER_PRIVATE_TOKEN}" == "_" ]]; then
@@ -29,6 +29,7 @@ do
 	case "$KEY" in
 		SEVERITY_OVERRIDE)	SEVERITY_OVERRIDE=${VALUE} ;;
 		SALT_SSH_IN_SALT)	SALT_SSH_IN_SALT=${VALUE} ;;
+		PIPELINE_NAME)		PIPELINE_NAME=${VALUE} ;;
 		*) ;;
 	esac
 done
@@ -96,7 +97,8 @@ PIPELINE_ID=$(curl -s -X POST -H "PRIVATE-TOKEN: ${GL_USER_PRIVATE_TOKEN}" \
 			{\"key\": \"SALT_MINION\", \"value\": \"${SALT_MINION}\"},
 			{\"key\": \"SALT_CMD\", \"value\": \"${SALT_CMD_BASE64}\"},
 			{\"key\": \"SEVERITY_OVERRIDE\", \"value\": \"${SEVERITY_OVERRIDE}\"},
-			{\"key\": \"SALT_SSH_IN_SALT\", \"value\": \"${SALT_SSH_IN_SALT}\"}
+			{\"key\": \"SALT_SSH_IN_SALT\", \"value\": \"${SALT_SSH_IN_SALT}\"},
+			{\"key\": \"PIPELINE_NAME\", \"value\": \"${PIPELINE_NAME}\"}
 		]
 	}" \
 	"${GL_URL}/api/v4/projects/${GITLAB_PROJECT_ID}/pipeline" | jq -r ".id")
